@@ -2,6 +2,8 @@
 
 Extrai as cores dominantes de qualquer logo e gera paletas prontas para personalização de sistemas em geral — com swatches interativos, cópia de HEX com um clique, exportação em PDF e snippets de código prontos para colar no projeto personalizado com base na logo do cliente.
 
+https://palette-logo-picker.streamlit.app/
+
 ---
 
 ## Como executar localmente
@@ -31,6 +33,8 @@ Acesso via ´localhost´
 5. Na seção **Código para projeto**, copie o snippet pronto (CSS, config.toml, Python ou JSON)
 6. Exporte o PDF com a paleta completa se necessário
 
+
+
 ---
 
 ## Estrutura do projeto
@@ -43,6 +47,22 @@ Acesso via ´localhost´
 ├── output/           # PDFs gerados (não versionado)
 └── requirements.txt
 ```
+
+---
+
+## Exemplos
+
+Faça upload da logo e o app identifica as cores automaticamente, separando por dominância.
+
+![Upload e seleção da logo](img/example.png)
+
+A paleta é exibida com strip proporcional, pills HEX e cards clicáveis — clique em qualquer cor para copiar o código.
+
+![Paleta extraída](img/example1.png)
+
+Na seção "Código para Projeto", o snippet já vem pronto para colar diretamente no seu projeto Streamlit.
+
+![Código gerado para o BI](img/example%202.png)
 
 ---
 
