@@ -24,6 +24,52 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# botão de abrir/fechar sidebar sempre visível, em qualquer tema
+st.markdown("""
+<style>
+/* Botão ">>" para reabrir o sidebar quando fechado */
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background-color: #1a1a2e !important;
+    border-radius: 0 10px 10px 0 !important;
+    padding: 10px 6px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.25) !important;
+    transition: background-color 0.2s ease !important;
+}
+[data-testid="collapsedControl"]:hover {
+    background-color: #2d2d4e !important;
+}
+[data-testid="collapsedControl"] svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+}
+
+/* Botão "<<" para fechar o sidebar quando aberto */
+[data-testid="stSidebarCollapseButton"] button,
+section[data-testid="stSidebar"] button[kind="header"] {
+    background-color: transparent !important;
+    color: #1a1a2e !important;
+    border: 1.5px solid rgba(26,26,46,0.25) !important;
+    border-radius: 8px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+[data-testid="stSidebarCollapseButton"] button:hover,
+section[data-testid="stSidebar"] button[kind="header"]:hover {
+    background-color: rgba(26,26,46,0.08) !important;
+}
+[data-testid="stSidebarCollapseButton"] svg,
+section[data-testid="stSidebar"] button[kind="header"] svg {
+    fill: #1a1a2e !important;
+    color: #1a1a2e !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ── Funções auxiliares ────────────────────────────────────────────────────────
 
 def _lighten(rgb: tuple, factor: float = 0.88) -> str:
