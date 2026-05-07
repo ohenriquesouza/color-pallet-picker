@@ -390,47 +390,11 @@ with tab_css:
     css_snippet = f"""\
 /* ── Cliente: {image_name} ── */
 :root {{
-    --brand-primary:   {p_color};   /* {primary[0]['pct']:.1f}% */
-    --brand-secondary: {s_color};
-    --brand-accent:    {a_color};
-    --brand-bg-tint:   {bg_light};  /* primária clarificada */
+    --brand-primary:         {p_color};   /* {primary[0]['pct']:.1f}% */
+    --brand-secondary:       {s_color};
+    --brand-accent:          {a_color};
+    --brand-bg-tint:         {bg_light};
     --brand-text-on-primary: {text_on_primary};
-}}
-
-/* Botões */
-.stButton > button {{
-    background-color: var(--brand-primary) !important;
-    color: var(--brand-text-on-primary) !important;
-    border: none !important;
-    border-radius: 6px !important;
-}}
-.stButton > button:hover {{
-    background-color: var(--brand-secondary) !important;
-    border: none !important;
-}}
-
-/* Sidebar */
-[data-testid="stSidebar"] {{
-    background-color: var(--brand-bg-tint) !important;
-}}
-[data-testid="stSidebar"] * {{
-    color: var(--brand-primary) !important;
-}}
-
-/* Títulos */
-h1, h2, h3 {{
-    color: var(--brand-primary) !important;
-}}
-
-/* Métricas */
-[data-testid="stMetricValue"] {{
-    color: var(--brand-primary) !important;
-}}
-
-/* Tabs ativas */
-button[data-baseweb="tab"][aria-selected="true"] {{
-    border-bottom-color: var(--brand-primary) !important;
-    color: var(--brand-primary) !important;
 }}"""
 
     st.code(css_snippet, language="css")
