@@ -1,6 +1,6 @@
 """
-Color Palette Picker — Streamlit UI
-Run: streamlit run app.py
+Interface web do Primary Colors Picker.
+Para rodar: streamlit run src/app.py
 """
 
 import sys
@@ -15,7 +15,7 @@ from PIL import Image as PILImage
 sys.path.insert(0, str(Path(__file__).parent))
 from main import extract_dominant_colors, build_pdf, IMG_DIR, OUTPUT_DIR
 
-# ── Page setup ────────────────────────────────────────────────────────────────
+# ── Configuração da página ────────────────────────────────────────────────────
 
 st.set_page_config(
     page_title="Primary Colors Picker",
@@ -24,10 +24,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Funções auxiliares ────────────────────────────────────────────────────────
 
 def _lighten(rgb: tuple, factor: float = 0.88) -> str:
-    """Blend rgb toward white by factor and return HEX."""
+    """Clareia uma cor misturando com branco."""
     r, g, b = (int(c + (255 - c) * factor) for c in rgb)
     return "#{:02X}{:02X}{:02X}".format(r, g, b)
 
@@ -42,12 +42,7 @@ def _text_on(rgb: tuple) -> str:
 
 
 def group_colors(palette: list) -> tuple[list, list, list]:
-    """
-    Split palette into three tiers by dominance percentage.
-    Primary  >= 20 %  (always at least the top color)
-    Secondary >= 8 %
-    Accent    < 8 %
-    """
+    """Agrupa as cores em primárias, secundárias e destaques pela % de presença."""
     primary, secondary, accent = [], [], []
     for i, c in enumerate(palette):
         if i == 0 or c["pct"] >= 20:
@@ -60,14 +55,14 @@ def group_colors(palette: list) -> tuple[list, list, list]:
 
 
 def palette_html(palette: list, primary: list, secondary: list, accent: list) -> str:
-    """Return a self-contained HTML page with interactive color cards."""
+    """Gera o HTML dos cards de cores clicáveis."""
 
     def cards(colors: list, swatch_h: int) -> str:
         out = ""
         for c in colors:
             bg = "rgb({},{},{})".format(*c["rgb"])
             fg = _text_on(c["rgb"])
-            bar_w = min(100, round(c["pct"] * 2))  # scale: 50% -> full bar
+            bar_w = min(100, round(c["pct"] * 2))  # barra proporcional à dominância
             out += f"""
             <div class="card" onclick="copy('{c['hex']}')">
                 <div class="swatch" style="background:{bg}; height:{swatch_h}px;">
@@ -226,7 +221,7 @@ def palette_html(palette: list, primary: list, secondary: list, accent: list) ->
 </html>""", height
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# ── Barra lateral ────────────────────────────────────────────────────────────
 
 with st.sidebar:
     st.markdown("## 🎨 Primary Colors Picker")
@@ -269,7 +264,7 @@ with st.sidebar:
     st.caption("Clique em qualquer card ou código HEX para copiar para a área de transferência.")
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Conteúdo principal ───────────────────────────────────────────────────────
 
 st.markdown("# 🎨 Primary Colors Picker")
 st.caption("Extrator de cores dominantes para personalização do seu projeto escalável")
@@ -278,7 +273,7 @@ if image_path is None:
     st.info("Selecione ou faça upload de uma logo no painel lateral para começar.")
     st.stop()
 
-# Extract colors
+# extrai as cores da imagem
 with st.spinner("Analisando cores..."):
     try:
         palette = extract_dominant_colors(image_path, n_colors=n_colors)
@@ -286,7 +281,7 @@ with st.spinner("Analisando cores..."):
         st.error(f"Erro ao processar imagem: {exc}")
         st.stop()
 
-# ── Top row: image + palette strip ───────────────────────────────────────────
+# ── Imagem e strip de cores ───────────────────────────────────────────────────
 
 col_img, col_right = st.columns([1, 2], gap="large")
 
@@ -298,7 +293,7 @@ with col_img:
 with col_right:
     st.markdown("**Paleta completa** — proporcional à dominância")
 
-    # Color strip proportional to pct
+    # faixa de cores proporcional à dominância
     strip_parts = "".join(
         f'<div title="{c["hex"]} ({c["pct"]:.1f}%)" '
         f'style="flex:{c["pct"]:.2f}; background:rgb({c["rgb"][0]},{c["rgb"][1]},{c["rgb"][2]});"></div>'
@@ -310,7 +305,7 @@ with col_right:
         unsafe_allow_html=True,
     )
 
-    # HEX pills row
+    # pills com os códigos HEX
     pills = " ".join(
         f'<span style="display:inline-block; background:rgb({c["rgb"][0]},{c["rgb"][1]},{c["rgb"][2]}); '
         f'color:{_text_on(c["rgb"])}; padding:4px 13px; border-radius:20px; '
@@ -322,7 +317,7 @@ with col_right:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Quick stats
+    # métricas rápidas
     metric_cols = st.columns(3)
     metric_cols[0].metric("Cores extraídas", len(palette))
     metric_cols[1].metric("Cor dominante", palette[0]["hex"])
@@ -330,7 +325,7 @@ with col_right:
 
 st.divider()
 
-# ── Interactive color cards ───────────────────────────────────────────────────
+# ── Cards de cores interativos ───────────────────────────────────────────────
 
 primary, secondary, accent = group_colors(palette)
 html_content, height = palette_html(palette, primary, secondary, accent)
@@ -338,7 +333,7 @@ st.components.v1.html(html_content, height=height, scrolling=False)
 
 st.divider()
 
-# ── PDF export ────────────────────────────────────────────────────────────────
+# ── Exportar PDF ─────────────────────────────────────────────────────────────
 
 st.markdown("### Exportar")
 col_exp, col_info = st.columns([1, 2])
@@ -370,7 +365,7 @@ with col_info:
 
 st.divider()
 
-# ── Código para BI ────────────────────────────────────────────────────────────
+# ── Snippets prontos para o projeto ──────────────────────────────────────────
 
 st.markdown("### 🖥️ Código para Projeto")
 st.caption(
@@ -388,7 +383,7 @@ text_on_primary = _text_on(p_rgb)
 
 tab_css, tab_toml, tab_py, tab_json = st.tabs(["CSS Variables", "config.toml", "Python", "JSON"])
 
-# ── CSS Variables ─────────────────────────────────────────────────────────────
+# ── Aba CSS ──────────────────────────────────────────────────────────────────
 with tab_css:
     st.caption("Cole no CSS do seu `set_custom_header` ou em qualquer `st.markdown(..., unsafe_allow_html=True)`.")
 
@@ -446,7 +441,7 @@ button[data-baseweb="tab"][aria-selected="true"] {{
         mime="text/css",
     )
 
-# ── config.toml ───────────────────────────────────────────────────────────────
+# ── Aba config.toml ──────────────────────────────────────────────────────────
 with tab_toml:
     st.caption("Salve como `.streamlit/config.toml` na raiz do projeto do cliente.")
 
@@ -467,7 +462,7 @@ font              = "sans serif"
         mime="text/plain",
     )
 
-# ── Python ────────────────────────────────────────────────────────────────────
+# ── Aba Python ───────────────────────────────────────────────────────────────
 with tab_py:
     st.caption("Cole no `app.py` do projeto — lógica de seleção de tema por cliente.")
 
@@ -512,7 +507,7 @@ set_custom_header(
         mime="text/plain",
     )
 
-# ── JSON ──────────────────────────────────────────────────────────────────────
+# ── Aba JSON ─────────────────────────────────────────────────────────────────
 with tab_json:
     st.caption("Paleta estruturada para integração futura com o sistema de temas do cliente.")
 

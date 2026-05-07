@@ -1,6 +1,5 @@
 """
-Color Palette Extractor
-Scans img/ for images, extracts dominant colors via K-means, and exports a PDF report.
+Extrai as cores dominantes de imagens e gera um relatório em PDF.
 """
 
 import os
@@ -23,15 +22,15 @@ from reportlab.platypus import (
 from reportlab.graphics.shapes import Drawing, Rect, String
 from reportlab.graphics import renderPDF
 
-# ── Configuration ─────────────────────────────────────────────────────────────
+# ── Configurações
 
 IMG_DIR = Path(__file__).parent.parent / "img"
 OUTPUT_DIR = Path(__file__).parent.parent / "output"
-NUM_COLORS = 6          # dominant colors to extract per image
+NUM_COLORS = 6          # quantas cores extrair por imagem
 THUMBNAIL_SIZE = (400, 400)
 SUPPORTED_FORMATS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tiff"}
 
-# ── Color helpers ─────────────────────────────────────────────────────────────
+# ── Funções auxiliares de cor
 
 def rgb_to_hex(rgb: tuple) -> str:
     return "#{:02X}{:02X}{:02X}".format(*rgb)
@@ -43,23 +42,23 @@ def _luminance(rgb: tuple) -> float:
 
 
 def extract_dominant_colors(image_path: Path, n_colors: int = NUM_COLORS) -> list:
-    """Return list of {rgb, hex, pct} sorted by dominance (most dominant first)."""
+    """Retorna as cores dominantes da imagem, da mais para a menos presente."""
     img = Image.open(image_path).convert("RGBA")
 
-    # Flatten alpha: replace transparent pixels with white before clustering
+    # troca pixels transparentes por branco
     background = Image.new("RGBA", img.size, (255, 255, 255, 255))
     background.paste(img, mask=img.split()[3])
     img_rgb = background.convert("RGB")
 
-    # Downsample for speed
+    # reduz o tamanho pra processar mais rápido
     img_rgb.thumbnail((200, 200), Image.LANCZOS)
     pixels = np.array(img_rgb).reshape(-1, 3).astype(float)
 
-    # Remove near-white pixels (background noise)
+    # ignora pixels quase brancos (fundo)
     mask = ~np.all(pixels > 245, axis=1)
     filtered = pixels[mask]
 
-    # Fall back to all pixels if filtering removed too many (e.g. white logo on white)
+    # se filtrou pixels demais, usa tudo
     if len(filtered) < n_colors:
         filtered = pixels
 
@@ -72,7 +71,7 @@ def extract_dominant_colors(image_path: Path, n_colors: int = NUM_COLORS) -> lis
     total = len(labels)
 
     counts = np.bincount(labels, minlength=k)
-    order = np.argsort(-counts)   # descending by count
+    order = np.argsort(-counts)
 
     result = []
     for idx in order:
@@ -82,7 +81,7 @@ def extract_dominant_colors(image_path: Path, n_colors: int = NUM_COLORS) -> lis
     return result
 
 
-# ── PDF building ──────────────────────────────────────────────────────────────
+# ── Geração do PDF ───────────────────────────────────────────────────────────
 
 PAGE_W, PAGE_H = A4
 MARGIN = 2 * cm
@@ -127,8 +126,8 @@ def build_pdf(image_results: list, output_path: Path) -> None:
         pagesize=A4,
         leftMargin=MARGIN, rightMargin=MARGIN,
         topMargin=MARGIN, bottomMargin=MARGIN,
-        title="Color Palette Report",
-        author="Color Palette Extractor",
+        title="Relatório de Paleta de Cores",
+        author="Primary Colors Picker",
     )
 
     styles = getSampleStyleSheet()
@@ -166,21 +165,21 @@ def build_pdf(image_results: list, output_path: Path) -> None:
     available_w = PAGE_W - 2 * MARGIN
     story = []
 
-    # ── Cover page ────────────────────────────────────────────────────────────
+    # ── Capa ──────────────────────────────────────────────────────────────────
     story.append(Spacer(1, 3 * cm))
-    story.append(Paragraph("Color Palette Report", title_style))
+    story.append(Paragraph("Relatório de Paleta de Cores", title_style))
     story.append(Paragraph(
-        datetime.now().strftime("Generated on %B %d, %Y at %H:%M"),
+        datetime.now().strftime("Gerado em %d/%m/%Y às %H:%M"),
         subtitle_style,
     ))
     story.append(Paragraph(
-        f"{len(image_results)} image(s) analyzed &mdash; up to {NUM_COLORS} dominant colors each",
+        f"{len(image_results)} imagem(ns) analisada(s) &mdash; até {NUM_COLORS} cores por imagem",
         subtitle_style,
     ))
     story.append(Spacer(1, 1 * cm))
     story.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#1A1A2E")))
 
-    # Full palette strip across all images
+    # faixa com todas as cores juntas
     all_colors = [c for entry in image_results for c in entry["colors"]]
     if all_colors:
         story.append(Spacer(1, 0.6 * cm))
@@ -195,11 +194,11 @@ def build_pdf(image_results: list, output_path: Path) -> None:
             ))
         story.append(strip)
         story.append(Spacer(1, 0.2 * cm))
-        story.append(Paragraph("Combined palette from all images", note_style))
+        story.append(Paragraph("Paleta combinada de todas as imagens", note_style))
 
     story.append(PageBreak())
 
-    # ── Per-image section ─────────────────────────────────────────────────────
+    # ── Seção por imagem ──────────────────────────────────────────────────────
     swatch_h = 3.0 * cm
     card_h = 1.8 * cm
 
@@ -212,7 +211,7 @@ def build_pdf(image_results: list, output_path: Path) -> None:
         story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#CCCCCC")))
         story.append(Spacer(1, 0.4 * cm))
 
-        # Image thumbnail
+        # miniatura da imagem
         with Image.open(entry["path"]) as thumb:
             thumb.thumbnail(THUMBNAIL_SIZE, Image.LANCZOS)
             thumb_w, thumb_h = thumb.size
@@ -226,7 +225,7 @@ def build_pdf(image_results: list, output_path: Path) -> None:
         story.append(RLImage(str(entry["path"]), width=display_w, height=display_h))
         story.append(Spacer(1, 0.6 * cm))
 
-        # Swatch row
+        # linha de amostras de cor
         swatch_row = [_swatch_drawing(c["rgb"], col_w - 4, swatch_h) for c in palette]
         hex_row = [Paragraph(c["hex"], mono_style) for c in palette]
         rgb_row = [Paragraph("rgb({}, {}, {})".format(*c["rgb"]), label_style) for c in palette]
@@ -248,7 +247,7 @@ def build_pdf(image_results: list, output_path: Path) -> None:
         story.append(tbl)
         story.append(Spacer(1, 0.6 * cm))
 
-        # Color cards with embedded text
+        # cards compactos com HEX e RGB
         card_row = [_color_card(c["rgb"], col_w - 6, card_h) for c in palette]
         card_tbl = Table(
             [card_row],
@@ -267,11 +266,11 @@ def build_pdf(image_results: list, output_path: Path) -> None:
     doc.build(story)
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# ── Execução via terminal ─────────────────────────────────────────────────────
 
 def run() -> None:
     if not IMG_DIR.exists():
-        print(f"[ERROR] Image folder not found: {IMG_DIR}")
+        print(f"[ERRO] Pasta de imagens não encontrada: {IMG_DIR}")
         sys.exit(1)
 
     images = sorted([
@@ -280,12 +279,12 @@ def run() -> None:
     ])
 
     if not images:
-        print(f"[INFO] No supported images found in {IMG_DIR}")
-        print(f"       Drop your logo files here and re-run.")
-        print(f"       Supported: {', '.join(sorted(SUPPORTED_FORMATS))}")
+        print(f"[INFO] Nenhuma imagem encontrada em {IMG_DIR}")
+        print(f"       Coloque os logos aqui e rode novamente.")
+        print(f"       Formatos aceitos: {', '.join(sorted(SUPPORTED_FORMATS))}")
         sys.exit(0)
 
-    print(f"[INFO] Found {len(images)} image(s)")
+    print(f"[INFO] {len(images)} imagem(ns) encontrada(s)")
 
     image_results = []
     for img_path in images:
@@ -297,17 +296,17 @@ def run() -> None:
             for c in palette:
                 print(f"       {c['hex']}  rgb{c['rgb']}  {c['pct']:.1f}%")
         except Exception as exc:
-            print(f"SKIP — {exc}")
+            print(f"IGNORADO — {exc}")
 
     if not image_results:
-        print("[ERROR] No images processed successfully.")
+        print("[ERRO] Nenhuma imagem processada com sucesso.")
         sys.exit(1)
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_path = OUTPUT_DIR / f"color_palette_{timestamp}.pdf"
 
-    print(f"\n[INFO] Generating PDF ...")
+    print(f"\n[INFO] Gerando PDF ...")
     build_pdf(image_results, output_path)
     print(f"[DONE] {output_path}")
 
